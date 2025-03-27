@@ -1,5 +1,5 @@
 import FireFly from "@hyperledger/firefly-sdk";
-import imageRegistryABI from "../../../solidity/artifacts/contracts/ImageRegistry_v2.sol/ImageRegistryV2.json"; 
+import imageRegistryABI from "../../../solidity/artifacts/contracts/ImageRegistry_v2.sol/ImageRegistryV2.json";
 import config from "../../config.json";
 
 const firefly = new FireFly({
@@ -7,20 +7,21 @@ const firefly = new FireFly({
   namespace: config.NAMESPACE,
 });
 
-// FFI/API names using versioning
 const ffiName = `imageRegistryV2FFI-${config.VERSION}`;
 const apiName = `imageApiV2-${config.VERSION}`;
 
+
 let interfaceId = "";
+
 
 export const setupImageRegistryContract = async () => {
   try {
     const interfaces = await firefly.getContractInterfaces();
-    const existing = interfaces.find(i => i.name === ffiName && i.version === config.VERSION);
 
-    if (existing) {
-      console.log("Interface already exists. Reusing:", existing.id);
-      interfaceId = existing.id;
+    const existingImageFFI = interfaces.find(i => i.name === ffiName && i.version === config.VERSION);
+    if (existingImageFFI) {
+      console.log("ImageRegistry Interface already exists. Reusing:", existingImageFFI.id);
+      interfaceId = existingImageFFI.id;
     } else {
       const generatedFFI = await firefly.generateContractInterface({
         name: ffiName,
@@ -33,7 +34,6 @@ export const setupImageRegistryContract = async () => {
       const createdInterface = await firefly.createContractInterface(generatedFFI, {
         confirm: true,
       });
-
       interfaceId = createdInterface.id;
 
       await firefly.createContractAPI(
@@ -45,13 +45,14 @@ export const setupImageRegistryContract = async () => {
         { confirm: true }
       );
 
-      console.log("Contract API created.");
+      console.log("ImageRegistry Contract API created.");
     }
+
   } catch (e: any) {
     console.error("FireFly setup failed:", e.message);
   }
 
-  return interfaceId;
+  return {interfaceId};
 };
 
 export const fireflyClient = firefly;

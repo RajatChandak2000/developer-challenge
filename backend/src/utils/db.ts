@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import config from "../../config.json";
 
 /**
- * Connects to MongoDB using Mongoose with proper options
+ * Connects to MongoDB using Mongoose
  */
 export const connectToDatabase = async (): Promise<void> => {
   try {
@@ -14,6 +14,6 @@ export const connectToDatabase = async (): Promise<void> => {
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
-    process.exit(1); // Exit if DB fails
+    process.exit(1); 
   }
 };

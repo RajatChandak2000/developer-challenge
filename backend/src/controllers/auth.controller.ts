@@ -9,16 +9,16 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { username, email, password } = req.body;
 
-    // Basic input validation
+    // Basic input validation to check if user has provided all the fields
     if (!username || !email || !password) {
       return res.status(400).json({ error: "Username, email, and password are required." });
     }
 
-    // Call service
+    // Register the new user
     const newUser = await registerUser(username, email, password);
 
     return res.status(201).json({
-      message: "User registered successfully",
+      message: "User registered successfully!!",
       user: newUser
     });
   } catch (err: any) {

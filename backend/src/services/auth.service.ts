@@ -10,7 +10,7 @@ const createEthereumAccount = async (): Promise<string> => {
       const res = await axios.post("http://localhost:5100", {
         jsonrpc: "2.0",
         method: "personal_newAccount",
-        params: ["user-secure-password"],
+        params: ["test_secret_rc"],
         id: 1,
       });
   
@@ -22,7 +22,7 @@ const createEthereumAccount = async (): Promise<string> => {
         method: "personal_unlockAccount",
         params: [
           newAddress,            
-          "user-secure-password", 
+          "test_secret_rc", 
           0                      
         ],
         id: 2,
@@ -68,7 +68,7 @@ export const registerUser = async (
   
     await user.save();
   
-    // 4. Return response
+    // 4. and then we return response
     return {
       id: user._id,
       username: user.username,
@@ -87,7 +87,7 @@ export const registerUser = async (
   
     const token = jwt.sign(
       { id: user._id, fireflyKey: user.fireflyKey },
-      process.env.JWT_SECRET || "test_secret_rc", // Use env in prod
+      process.env.JWT_SECRET || "test_secret_rc", 
       { expiresIn: "1d" }
     );
   

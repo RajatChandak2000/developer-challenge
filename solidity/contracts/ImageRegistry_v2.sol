@@ -14,8 +14,11 @@ contract ImageRegistryV2 {
     }
 
     uint public imageCount = 0;
+
+    //To keep track of images uploaded on chain
     mapping(uint => Image) public images;
 
+    //To keep track if royalty paid to the oringal artist
     mapping(uint => mapping(address => bool)) public royaltyPaid;
 
     event ImageRegistered(

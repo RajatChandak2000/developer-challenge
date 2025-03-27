@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserModel } from "../models/Users";
 import { handleImageUpload } from "../services/image.service";
+import { PostModel } from "../models/Posts";
 import mongoose from "mongoose";
 
 export const uploadImage = async (req: Request, res: Response) => {
@@ -24,4 +25,19 @@ export const uploadImage = async (req: Request, res: Response) => {
   // Now we pass the use id to the image service and we also pass the payRoyalty flag
   const result = await handleImageUpload(file, caption, userIdString,requireRoyalty === "true", payRoyalty === "true");
   res.status(200).json(result);
+};
+
+export const getAllPosts = async (req: Request, res: Response) => {
+  try {
+    //To fetch the posts and just give arsitst name and if derived from as well
+    const posts = await PostModel.find({})
+      .sort({ createdAt: -1 })
+      .populate("artist", "username")
+      .populate("derivedFrom", "artistName");
+
+    res.status(200).json(posts);
+  } catch (error: any) {
+    console.error("Error fetching posts:", error.message);
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
 };

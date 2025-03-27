@@ -9,7 +9,7 @@ const TOPIC = "image-events";
 
 export async function setupEventFlow(interfaceId: string) {
   try {
-    // Step 1: Get all existing listeners
+    // We first get all existing listeners
     const { data: listeners } = await axios.get(`${FIRE_FLY_BASE}/contracts/listeners`);
     const existingListener = listeners.find((l: any) =>
       l.name === LISTENER_NAME &&
@@ -45,7 +45,7 @@ export async function setupEventFlow(interfaceId: string) {
       console.log("Listener already exists. Skipping listener creation.");
     }
 
-    // Step 2: Check for existing subscription
+    //Check for existing subscription
     const { data: subscriptions } = await axios.get(`${FIRE_FLY_BASE}/subscriptions`);
     const existingSub = subscriptions.find(
       (s: any) =>
@@ -77,3 +77,58 @@ export async function setupEventFlow(interfaceId: string) {
     throw err;
   }
 }
+
+export async function setupRoyaltyEventFlow(interfaceId: string) {
+    try {
+      const { data: listeners } = await axios.get(`${FIRE_FLY_BASE}/contracts/listeners`);
+      const existingListener = listeners.find((l: any) =>
+        l.name === "royalty-listener" &&
+        l.interface?.id === interfaceId &&
+        l.location?.address?.toLowerCase() === CONTRACT_ADDRESS.toLowerCase()
+      );
+  
+      let listenerId = existingListener?.id;
+  
+      if (!listenerId) {
+        const { data: newListener } = await axios.post(`${FIRE_FLY_BASE}/contracts/listeners`, {
+          name: "royalty-listener",
+          topic: "royalty-events",
+          filters: [
+            {
+              interface: { id: interfaceId },
+              location: { address: CONTRACT_ADDRESS },
+              eventPath: "RoyaltyPaid",
+            },
+          ],
+          options: { firstEvent: "oldest" },
+        });
+        listenerId = newListener.id;
+      }
+  
+      const { data: subscriptions } = await axios.get(`${FIRE_FLY_BASE}/subscriptions`);
+      const existingSub = subscriptions.find(
+        (s: any) =>
+          s.name === "royalty-subscription" &&
+          s.filter?.blockchainevent?.listener === listenerId
+      );
+  
+      if (!existingSub) {
+        await axios.post(`${FIRE_FLY_BASE}/subscriptions`, {
+          name: "royalty-subscription",
+          namespace: config.NAMESPACE,
+          transport: "websockets",
+          topic: "royalty-events",
+          filter: {
+            events: "blockchain_event_received",
+            blockchainevent: {
+              listener: listenerId,
+            },
+          },
+          options: { firstEvent: "-1", withData: false },
+        });
+      }
+    } catch (err: any) {
+      console.error("Error setting up royalty listener:", err.response?.data || err.message);
+    }
+  }
+  

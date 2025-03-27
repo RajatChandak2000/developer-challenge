@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password: string;
   fireflyKey: string;
   createdAt: Date;
+  likedPosts: string[];
   comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -15,6 +16,7 @@ const UserSchema = new Schema<IUser>({
   email:    { type: String, required: true, unique: true },
   password: { type: String, required: true },
   fireflyKey: { type: String, required: true },
+  likedPosts: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
 });
 
