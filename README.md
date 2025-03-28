@@ -1,11 +1,8 @@
-# Developer Challenge
+# Decentralized Image-Sharing Platform
 
-Build a DApp on using FireFly.
+A full-stack, blockchain-powered social media platform built for the Kaleido Developer Challenge. This DApp empowers users to upload, share, and interact with images while ensuring credit and attribution for original artists using smart contracts, perceptual hashing, and on-chain metadata.
 
-Fork this repo, choose a use case you think would be interesting to build as a decentralized application (DApp), then get creative and have fun.
-
-... and please **ask questions** - we don't want you to be stuck, and appreciate collaboration through the project.
-
+---
 ## What is a DApp?
 
 - [Ethereum Foundation](https://ethereum.org/en/developers/docs/dapps/)
@@ -15,52 +12,65 @@ Fork this repo, choose a use case you think would be interesting to build as a d
 - [FireFly docs](https://docs.kaleido.io/kaleido-platform/full-stack/dapps/)
   - DApps in an Enterprise context
 
-## What does done look like?
+## 🚀 Tech Stack
 
-We would like your project to demonstrate your concept end-to-end, but it doesn't need to be a complete application.
+**Frontend**
+- React + TypeScript
+- Material UI
+- Axios + JWT-based auth
+- Socket.IO (for real-time updates)
 
-It must:
+**Backend**
+- Node.js + Express + TypeScript
+- MongoDB + Mongoose
+- Hyperledger FireFly SDK
+- IPFS for image storage
+- Redis (for pHash caching & deduplication)
+- WebSockets for live likes/comments
 
-- Have a Web based frontend user experience which talks to your app's backend
-- Have a backend-for-the-frontend (BFF), that uses FireFly's API
-  - Note: An SDK including API wrappers and a WebSocket event listener is provided for Node.js and includes type definitions for TypeScript. You are not required to use it, but we strongly recommend it as it will save you a lot of time.
-- Use Hyperledger FireFly
-- Have on-chain Smart Contract logic, written in Solidity
-- Contain a README that gives a quick overview of the use case, and tells us how to run it
+**Blockchain**
+- Ethereum (via Kaleido/FireFly stack)
+- Solidity Smart Contracts (`ImageRegistry`, `LikeRegistry`)
+- On-chain metadata, deduplication & royalties
 
-How much time you spend on each tier is down to you - depending on your interests and the skills you want to show.
+---
 
-> We've given you a basic, but functional, starting point for each layer of the stack.
-> ... and yes, we know the UI is a bit naff ;-)
+## 📦 Features
 
-## Some ideas
+### 🖼️ Image Uploads
+- Upload images with captions and artist metadata
+- Choose to enforce royalties for derivative works
+- Images are uploaded to IPFS via FireFly
+- Image metadata registered on-chain (SHA-256, pHash, royalty flag, etc.)
 
-These are just ideas to give inspiration
+### 🧠 Duplicate Detection
+- Uses SHA-256 and perceptual hashing (pHash)
+- Detects both exact and visually similar images
+- Stores pHash in Redis for fast deduplication
+- Supports derived posts with attribution
 
-Choose something/anything you think is interesting, and gives you license to focus on the bit of the stack you care about.
+### 💸 Royalty Enforcement
+- If royalty is required, duplicates must pay a simulated fee before being posted
+- Smart contract enforces royalty logic via `ImageRegistry`
 
-It's your choice whether you focus more on how things work under the covers, or how things feel in the UI/UX.
+### 🧾 Derived Posts
+- Derived images are linked to the original post
+- Likes/comments on derived posts redirect to the original
+- Displays attribution: original artist & organization
 
-- A blockchain backed ratings system for Movies
-- A racing simulation (you can even see one here in our [Racecourse sample](https://github.com/kaleido-io/racecourse))
-- A funky avatar generator, where each avatar is backed by a unique token
-- A conference ticketing system with camera & QR code integration
-- A digital collectable swag bag, earned by posting to social media
+### ❤️ Likes System
+- Like posts (original or derived)
+- One like per user enforced on-chain
+- Tracked using `LikeRegistry` contract
+- Emits `PostLiked` events for real-time sync
+- Stored in MongoDB & broadcast to frontend via WebSocket
 
-## Want more dev stack?
+### 🔐 Auth & Identity
+- User registration/login using JWT
+- Each user has a unique Ethereum signing key (FireFly Identity)
+- Keys used to sign on-chain transactions securely
 
-Here are some dev technologies (not in the starter repo) that we love at Kaleido:
-
-- TailwindCSS or Material UI (or insert your favorite component library here) - at Kaleido we love re-use
-- GraphQL (Apollo) for front-end/back-end comms
-- WebSockets for live updating and notifications
-- PostgreSQL for relational data
-- MongoDB NoSQL database for configuration and local state
-
-Remember we'd like a thin thread through your DApp, so choose technologies you think you can be productive in.
-
-Want to throw away most of the original `vite` + `express` based repo?
-No problem. Go for it.
+---
 
 ## Setting up your FireFly on your machine
 
@@ -89,15 +99,7 @@ This repo has three directories in it:
 
 - `solidity`: Two example solidity contracts that can be compiled, tested, and deployed with Hardhat. [Go to the Readme](./solidity/)
 - `backend`: A very simple TypeScript Node.js app that uses the FireFly SDK to interact with a custom smart contract. [Go to the Readme](./backen/)
-- `frontend`: A TypeScript React UI bootstrapped with [vite](https://vitejs.dev/guide/) that calls the API in the backend. [Go to the Readme](./frontend/)
+- `frontend`: A TypeScript React UI that calls the API in the backend. [Go to the Readme](./frontend/)
 
 You will need to first deploy the example smart contracts with Hardhat to FireFly. Once the backend/frontend are started, the buttons on the Web UI will call the backend API endpoints to interact with the contracts through FireFly.
 
-![Backend](backend.png)
-![Frontend](frontend.png)
-
-## Your journey begins here
-
-Now it's your turn to build something! You can use this backend and frontend as a starting point for your app, or you can start from scratch if you want.
-
-You will find the [FireFly documentation](https://hyperledger.github.io/firefly/latest/) useful as you build this project.
