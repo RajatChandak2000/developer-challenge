@@ -94,7 +94,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike }) => {
     if (!post.derivedFrom) return null;
     return (
       <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-        • Derived from @{post.derivedFrom.artistName} of Org @{post.org}
+        • Derived from @{post.derivedFrom.artistName} of organization @{post.org}
       </Typography>
     );
   };
