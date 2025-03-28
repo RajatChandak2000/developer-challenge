@@ -122,12 +122,12 @@ async function listenToEvents() {
                 createdAt: new Date(),
               });
         
-              console.log(`🔔 Notified ${originalUser.username} of duplication`);
+              console.log(`Notified ${originalUser.username} of duplication`);
             } else {
               console.warn("Original artist not found locally:", originalArtistAddress);
             }
           } else {
-            // ✅ Store original image metadata
+            //  Store original image metadata
             await ImageRegistryModel.create({
               imageId,
               sha256,
@@ -141,7 +141,7 @@ async function listenToEvents() {
               requireRoyalty,
             });
         
-            console.log(`📝 Stored original image metadata for imageId ${imageId}`);
+            console.log(`Stored original image metadata for imageId ${imageId}`);
           }
         
 
