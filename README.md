@@ -123,7 +123,7 @@ This repo has three directories:
    ```bash
    cd backend
    npm install
-   npm run dev
+   npm start
    ```
    > Make sure `config.json` is properly configured before starting
 
@@ -131,10 +131,10 @@ This repo has three directories:
    ```bash
    cd frontend
    # Update `vite.config.js`
-   # - Update proxy target to match backend URL (e.g., http://localhost:3000)
-   # - Update WebSocket URI if needed (e.g., ws://localhost:3000)
+   # - Update proxy target to match backend URL (e.g., http://localhost:4000)
+   # - Update WebSocket URI if needed (e.g., ws://localhost:4000)
    npm install
-   npm run dev
+   npm start
    ```
 
 5. ✨ **Voila!** Your decentralized image-sharing DApp is live
