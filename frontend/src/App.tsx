@@ -1,140 +1,100 @@
-// import { FormEvent, useState } from "react";
-// import "./App.css";
-
-// function App() {
-//   const [loading, setLoading] = useState(false);
-//   const [errorMsg, setErrorMsg] = useState(null);
-//   const [desiredValue, setDesiredValue] = useState("test");
-//   const [value, setValue] = useState("");
-//   const [tokenId, setTokenId] = useState("");
-
-//   async function setContractValue() {
-//     setLoading(true);
-//     setErrorMsg(null);   
-//     try {
-//       const res = await fetch(`/api/value`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           x: desiredValue,
-//         }),
-//       });
-//       const { error } = await res.json();
-//       if (!res.ok) {
-//         setErrorMsg(error);
-//       }
-//     } catch (err: any) {
-//       setErrorMsg(err.stack);
-//     }
-//     setLoading(false);
-//   }
-
-//   async function getContractValue() {
-//     setLoading(true);
-//     setErrorMsg(null);
-//     try {
-//       const res = await fetch(`/api/value`);
-//       console.log(await res);
-//       const { x, error } = await res.json();
-//       if (!res.ok) {
-//         setErrorMsg(error);
-//       } else {
-//         setValue(x);
-//       }
-//     } catch (err: any) {
-//       setErrorMsg(err.stack);
-//     }
-//     setLoading(false);
-//   }
-
-//   async function mintToken() {
-//     setLoading(true);
-//     setErrorMsg(null);
-//     const randomTokenId = Math.floor(Math.random() * 1000);
-//     try {
-//       const res = await fetch(`/api/mintToken`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           tokenId: randomTokenId,
-//         }),
-//       });
-//       const { tokenId, error } = await res.json();
-//       if (!res.ok) {
-//         setErrorMsg(error);
-//       } else {
-//         setTokenId(tokenId);
-//       }
-//     } catch (err: any) {
-//       setErrorMsg(err.stack);
-//     }
-//     setLoading(false);
-//   }
-
-//   function handleChange(event: FormEvent<HTMLInputElement>) {
-//     setDesiredValue(event.currentTarget.value);
-//   }
-
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <img
-//           src={"/kaleido_logo.svg"}
-//           className="App-logo"
-//           alt="logo"
-//           aria-busy={loading}
-//         />
-//         <p>
-//           <input className="App-input" onChange={handleChange} />
-//           <button
-//             type="button"
-//             className="App-button"
-//             onClick={setContractValue}
-//           >
-//             Set Value
-//           </button>
-//         </p>
-//         <p>
-//           <button
-//             type="button"
-//             className="App-button"
-//             onClick={getContractValue}
-//           >
-//             Get Value
-//           </button>
-//           {value !== "" ? <p>Retrieved value: {value}</p> : <p>&nbsp;</p>}
-//         </p>
-//         <p>
-//           <button type="button" className="App-button" onClick={mintToken}>
-//             Mint a Token
-//           </button>
-//           {tokenId !== "" ? <p>Minted Token ID: {tokenId}</p> : <p>&nbsp;</p>}
-//         </p>
-//         {errorMsg && <pre className="App-error">Error: {errorMsg}</pre>}
-//       </header>
-//     </div>
-//   );
-// }
-
-// export default App;
-
-
-
-
-import { FormEvent, useState } from "react";
-import "./App.css";
-import "./index.css";
-import Typography from '@mui/material/Typography';
-import Navbar from "./components/Navbar";
+import React from "react";
+import { Routes, Route } from "react-router-dom";
 import Home from "./components/Home";
+import AuthPage from "./components/ AuthPage";
+import { isAuthenticated } from "./utils/auth";
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { NotificationProvider } from "./components/NotificationContext";
 
-function App() {
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#6A5ACD", // Rich purple-blue
+    },
+    secondary: {
+      main: "#4F46E5", // Vibrant indigo
+    },
+    background: {
+      default: "#F4F6FB", // Soft background for better contrast
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+    h4: {
+      fontWeight: 700,
+      color: "#4F46E5", // Indigo highlight
+    },
+    h5: {
+      fontWeight: 600,
+      color: "#6A5ACD",
+    },
+    h6: {
+      fontWeight: 600,
+    },
+    button: {
+      textTransform: "none",
+      fontWeight: 500,
+    },
+  },
+  shape: {
+    borderRadius: 10,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          boxShadow: "none",
+          "&:hover": {
+            backgroundColor: "#4F46E5",
+            boxShadow: "none",
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          scrollbarWidth: "thin",
+          "&::-webkit-scrollbar": {
+            width: "8px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "#E0E7FF", // Lighter blue track
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "#4F46E5", // Deep indigo
+            borderRadius: "6px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            background: "#4338CA", // Slightly darker indigo
+          },
+        },
+      },
+    },
+  },
+});
+
+const App = () => {
   return (
-    <div className="app-container">
-      <Navbar />
-      <Home />
-    </div>
+    <NotificationProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+          <Routes>
+            <Route path="/" element={<AuthPage />} />
+            <Route path="/home" element={isAuthenticated() ? <Home /> : <AuthPage />} />
+          </Routes>
+        </div>
+      </ThemeProvider>
+    </NotificationProvider>
   );
-}
+};
 
 export default App;
