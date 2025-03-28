@@ -3,6 +3,9 @@ import { Request, Response } from "express";
 import { handleLikePost } from "../services/like.service";
 import { UserModel } from "../models/Users";
 
+/**
+ * Controller for POST /api/:postId/like"
+ */
 export const likePostController = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId;
@@ -18,6 +21,9 @@ export const likePostController = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Controller for GET /api/hasLikedPost/:postId"
+ */
 export const checkIfUserLikedPost = async (req: Request, res: Response) => {
     const postId = req.params.postId.toString();
     let user = (req as any).user;

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 
-//JWT middelware to check in subsequet requets
+//JWT middelware to check in subsequet requests
 interface AuthRequest extends Request {
   user?: {
     id: string;

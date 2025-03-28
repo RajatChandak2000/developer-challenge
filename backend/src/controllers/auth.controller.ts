@@ -14,7 +14,7 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Username, email, and password are required." });
     }
 
-    // Register the new user
+    // Register a new user
     const newUser = await registerUser(username, email, password);
 
     return res.status(201).json({

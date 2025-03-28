@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import { UserModel } from "../models/Users";
+import { ImageRegistryModel } from "../models/ImageRegistryModel";
 import { handleImageUpload } from "../services/image.service";
 import { PostModel } from "../models/Posts";
 import mongoose from "mongoose";
 
+/**
+ * Controller for POST /api/post"
+ */
 export const uploadImage = async (req: Request, res: Response) => {
   const file = req.file;
   const { caption, requireRoyalty, payRoyalty } = req.body;
@@ -27,6 +31,9 @@ export const uploadImage = async (req: Request, res: Response) => {
   res.status(200).json(result);
 };
 
+/**
+ * Controller for GET /api/posts"
+ */
 export const getAllPosts = async (req: Request, res: Response) => {
   try {
     //To fetch the posts and just give arsitst name and if derived from as well

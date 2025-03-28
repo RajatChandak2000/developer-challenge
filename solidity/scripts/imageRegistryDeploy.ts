@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const ImageRegistryV2 = await ethers.getContractFactory("ImageRegistryV2");
-  const imageRegistry = await ImageRegistryV2.deploy();
+  const ImageRegistryV5 = await ethers.getContractFactory("ImageRegistryV5");
+  const imageRegistry = await ImageRegistryV5.deploy();
 
   await imageRegistry.deployed();
 
-  console.log("✅ ImageRegistryV2 deployed to:", imageRegistry.address);
+  console.log("ImageRegistryV5 deployed to:", imageRegistry.address);
 }
 
 main().catch((error) => {

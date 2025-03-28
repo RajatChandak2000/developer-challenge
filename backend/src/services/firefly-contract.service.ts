@@ -1,5 +1,5 @@
 import FireFly from "@hyperledger/firefly-sdk";
-import imageRegistryABI from "../../../solidity/artifacts/contracts/ImageRegistry_v2.sol/ImageRegistryV2.json";
+import imageRegistryABI from "../../../solidity/artifacts/contracts/ImageRegistry_v5.sol/ImageRegistryV5.json";
 import config from "../../config.json";
 
 const firefly = new FireFly({
@@ -7,12 +7,10 @@ const firefly = new FireFly({
   namespace: config.NAMESPACE,
 });
 
-const ffiName = `imageRegistryV2FFI-${config.VERSION}`;
-const apiName = `imageApiV2-${config.VERSION}`;
-
+const ffiName = `imageRegistryV5FFI-${config.VERSION}`;
+const apiName = `imageApiV5-${config.VERSION}`;
 
 let interfaceId = "";
-
 
 export const setupImageRegistryContract = async () => {
   try {
@@ -28,7 +26,7 @@ export const setupImageRegistryContract = async () => {
         namespace: config.NAMESPACE,
         version: config.VERSION,
         input: { abi: imageRegistryABI.abi },
-        description: "FFI for ImageRegistryV2",
+        description: "FFI for ImageRegistryV5",
       });
 
       const createdInterface = await firefly.createContractInterface(generatedFFI, {
@@ -47,7 +45,6 @@ export const setupImageRegistryContract = async () => {
 
       console.log("ImageRegistry Contract API created.");
     }
-
   } catch (e: any) {
     console.error("FireFly setup failed:", e.message);
   }

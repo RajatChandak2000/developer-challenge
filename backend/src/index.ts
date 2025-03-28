@@ -15,7 +15,9 @@ import { Notification } from './models/Notifications';
 import notificationRoutes from './routes/notification.route';
 import config from '../config.json';
 import { UserModel } from './models/Users';
-import { setupRoyaltyEventFlow } from './utils/listner';
+import { setupRoyaltyEventFlow,setupEventFlow } from './utils/listner';
+import { ImageRegistryModel } from './models/ImageRegistryModel';
+import { Types } from 'mongoose';
 
 const app = express();
 
@@ -75,94 +77,145 @@ async function listenToEvents() {
     { filter: { events: "blockchain_event_received" } },
     async (socket, event) => {
       if ("blockchainEvent" in event) {
+
         const blockchainEvent = event.blockchainEvent as any;
         const sig = blockchainEvent.info?.signature;
         const payload = blockchainEvent.output;
 
         console.log("Received blockchain event:", sig);
-
+        
         // Handle image registered event
+        
         if (sig?.includes("ImageRegistered") && payload) {
-          const imageId = Number(payload.imageId);
-          const sha256Hash = payload.sha256Hash?.replace(/^0x/, "");
+          const {
+            imageId,
+            sha256Hash,
+            pHash,
+            ipfsHash,
+            timestamp,
+            requireRoyalty,
+            uploader, // msg.sender
+            originalArtistName,
+            originalOrg,
+            originalArtistAddress,
+            isDerived,
+            duplicatorName,
+            duplicatorOrg,
+          } = payload;
+        
+          const sha256 = sha256Hash.replace(/^0x/, "");
+          const pHashClean = pHash.replace(/^0x/, "");
+        
+          if (isDerived) {
+            // Only notify original artist — don't store in ImageRegistryModel
+            const originalUser = await UserModel.findOne({ fireflyKey: originalArtistAddress });
+        
+            if (originalUser) {
+              const message = `Your post has been duplicated by ${duplicatorName} from ${duplicatorOrg}.`;
+              const idStr = (originalUser._id as Types.ObjectId).toString();
+        
+              sendNotificationToUser(idStr, message);
+              await Notification.create({
+                userId: originalUser._id,
+                message,
+                read: false,
+                createdAt: new Date(),
+              });
+        
+              console.log(`🔔 Notified ${originalUser.username} of duplication`);
+            } else {
+              console.warn("Original artist not found locally:", originalArtistAddress);
+            }
+          } else {
+            // ✅ Store original image metadata
+            await ImageRegistryModel.create({
+              imageId,
+              sha256,
+              pHash: pHashClean,
+              ipfsHash,
+              artist: uploader,
+              artistName: originalArtistName,
+              org: originalOrg,
+              isDerived: false,
+              timestamp: new Date(Number(timestamp) * 1000),
+              requireRoyalty,
+            });
+        
+            console.log(`📝 Stored original image metadata for imageId ${imageId}`);
+          }
+        
 
-          //Once the image is registerted then store it in the database with updatd imageId
+          // Update the post created by this uploader (original or derived)
+
           const updated = await PostModel.findOneAndUpdate(
-            { sha256: sha256Hash },
+            { sha256: sha256, fireflyKey: uploader },  // fireflyKey matches Ethereum address
             { imageId },
             { new: true }
           );
-
           if (updated) {
-            console.log(`Post updated with imageId ${imageId}`);
+            console.log(`Updated PostModel with imageId ${imageId}`);
           } else {
-            console.warn("No matching post found for sha256:", sha256Hash);
+            console.warn("No matching post found to update imageId");
           }
-        }
-
+        }        
+        
         // Handle like event
         if (sig?.includes("PostLiked") && payload) {
           const imageId = Number(payload.imageId);
-          const user = payload.user;
-          const numberOfLikes = payload.totalLikes;
-
+          const likerAddress = payload.user;
+          const totalLikes = payload.totalLikes;
+      
+          // Find all posts with this imageId (could be original or derived)
           const posts = await PostModel.find({ imageId });
-          if (!posts.length) {
-            console.warn(`No posts found with imageId: ${imageId}`);
+      
+          if (posts.length === 0) {
+            console.warn(`No PostModel found for imageId: ${imageId}`);
             return;
           }
-
+      
+          // Get liker (may be undefined)
+          const liker = await UserModel.findOne({ fireflyKey: String(likerAddress) });
+          const likerName = liker?.username || "someone from different org";
+      
           for (const post of posts) {
-            if (!post.derivedFrom) {
-              post.likeCount = numberOfLikes;
-              await post.save();
-              console.log(`Synced like count for original post ${post._id} → ${post.likeCount}`);
-              const postliker = await UserModel.findOne({ fireflyKey: String(user) });
-              console.log(postliker)
-              if(postliker){
-              // Send notific tion to the original post owner about the like update
-              if(post.artist){
-        
-             
-                const message=`Your post was liked by ${postliker.username}.`;
-                sendNotificationToUser(post.artist.toString(), message);
-
-                await Notification.create({
-                  userId: post.artist.toString(),
-                  message,
-                  read: false,
-                });
-              }
-            }
+            //  1. Update like count
+            post.likeCount = totalLikes;
+            await post.save();
+      
+            //  2. Notify post artist (always)
+            const postArtist = await UserModel.findById(post.artist);
+            if (postArtist) {
+              const message = `Your post was liked by ${likerName}!`;
+              const idStr = (postArtist._id as Types.ObjectId).toString();
               
+              sendNotificationToUser(idStr, message);
+      
+              await Notification.create({
+                userId: postArtist._id,
+                message,
+                read: false,
+              });
             }
           }
         }
-
-
+        
 
         //Royalty listner 
         if (sig?.includes("RoyaltyPaid") && payload) {
-          console.log("Royalty caught!")
           const imageId = Number(payload.imageId);
           const payerKey = payload.user;
+          const payerName = payload.payerName;
+          const payerOrg = payload.payerOrg;
         
-          const posts = await PostModel.find({ imageId: imageId });
+          const posts = await PostModel.find({ imageId });
+          if (!posts.length) return;
         
-          if (posts.length === 0) return;
-        
-          const basePost = posts.find(p => !p.derivedFrom); // original pos // t
+          const basePost = posts.find(p => !p.derivedFrom);
           if (!basePost || !basePost.artist) return;
         
-          const payer = await UserModel.findOne({ fireflyKey: String(payerKey) });
-          if (!payer) return;
+          const message = `You received royalty from ${payerName || "someone"} (${payerOrg || "unknown org"}).`;
         
-          const message = `You have received a royalty from ${payer.username}.`;
-        
-          // WebSocket
           sendNotificationToUser(basePost.artist.toString(), message);
-        
-          // DB
           await Notification.create({
             userId: basePost.artist.toString(),
             message,
@@ -170,10 +223,8 @@ async function listenToEvents() {
             createdAt: new Date(),
           });
         
-          console.log(`Royalty notification sent to ${basePost.artist} from ${payer.username}`);
+          console.log(`Royalty paid for image ${imageId} by ${payerName} from ${payerOrg}`);
         }
-    
-
       }
     }
   );
@@ -185,7 +236,7 @@ async function init() {
 
   const { interfaceId: imageInterfaceId } = await setupImageRegistryContract();
   const likeInterfaceId = await setupLikeRegistryContract();
-  //await setupEventFlow(imageInterfaceId);
+  setupEventFlow(imageInterfaceId);
   await setupLikeEventFlow(likeInterfaceId);
   await setupRoyaltyEventFlow(imageInterfaceId);
 
@@ -193,7 +244,7 @@ async function init() {
 
   // Start the server
   server.listen(config.PORT, () =>
-    console.log(`🚀 Kaleido DApp backend listening on port ${config.PORT}!`)
+    console.log(`Kaleido DApp backend listening on port ${config.PORT}!`)
   );
 }
 

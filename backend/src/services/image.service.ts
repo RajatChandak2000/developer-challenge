@@ -8,6 +8,8 @@ import { fireflyClient, contractApiName } from "./firefly-contract.service";
 import { hammingDistance } from "../utils/hashing";
 import { PostModel } from "../models/Posts";
 import { UserModel } from "../models/Users";
+import { ImageRegistryModel } from "../models/ImageRegistryModel";
+import config from "../../config.json";
 
 
 /**
@@ -56,8 +58,6 @@ export const handleImageUpload = async (
     const pHashHex = Buffer.from(pHashBuffer).toString("hex").slice(0, 32);
     console.log("pHash:", pHashHex);
 
-
-
     console.log("Fetching user from DB");
     const user = await UserModel.findById(userId);
     if (!user) {
@@ -67,37 +67,19 @@ export const handleImageUpload = async (
 
     console.log("Here we check for similar or exact posts in DB...");
     // For now we fetch all posts and check for similarity in all posts
-    const allPosts = await PostModel.find({}, "sha256 pHash txId ipfsHash _id imageId artist requireRoyalty likeCount");
+    const allPosts = await ImageRegistryModel.find({}, "sha256 pHash ipfsHash _id imageId artist artistName org requireRoyalty");
 
     for (const post of allPosts) {
       let basePost = post;
-      if (post.derivedFrom) {
-        const resolved = await PostModel.findById(post.derivedFrom);
-        if (resolved) {
-          console.log(` Found derived post. Using original post ${resolved._id} instead.`);
-          basePost = resolved;
-        }
-      }
+
       const isExact = basePost.sha256 === shaHash;
       const dist = hammingDistance(pHashHex, basePost.pHash);
-      const isSimilar = dist <= 10; //Current threshold set at 10 
-      
+      const isSimilar = dist <= 5; //Current threshold set at 5
 
-
-
-      if ((isExact || isSimilar) && basePost.txId) {
+      if ((isExact || isSimilar) && basePost.imageId) {
         console.log(`Match found! Type: ${isExact ? "Exact" : "Similar"} | Distance: ${dist}`);
-        console.log("Transaction id of that post:",basePost.txId)
         
-
-        //Check if transaction actually happend
-        const txDetails = await fireflyClient.getTransaction(basePost.txId);
-        console.log(txDetails)
-        console.log("Fetched txDetails:", txDetails?.id || "null");
-
-        if (txDetails) {
-
-
+        if (basePost.imageId) {
           // Check if the orignal post require royalty by the owner
           if (basePost.requireRoyalty && !payRoyaltyFlag) {
             console.log("Royalty required! Sending the request back to frontend");
@@ -105,7 +87,6 @@ export const handleImageUpload = async (
               requiresRoyalty: true,
               originalPost: {
                 postId: basePost._id,
-                artist: basePost.artist,
                 ipfsHash: basePost.ipfsHash,
               },
               message: "Royalty required. Confirm before uploading",
@@ -120,7 +101,11 @@ export const handleImageUpload = async (
               contractApiName,
               "payRoyalty",
               {
-                input: { imageId: basePost.imageId },
+                input: {
+                  imageId: basePost.imageId,
+                  payerName: user.username,
+                  payerOrg: config.ORG, // Ideally from user.org
+                },
                 key: user.fireflyKey,
               },
               {
@@ -130,9 +115,8 @@ export const handleImageUpload = async (
                 },
               }
             );
-          
+            
             console.log("Royalty payment simulated.");
-  
           }
 
           console.log("Uploading derived image to IPFS...");
@@ -143,7 +127,7 @@ export const handleImageUpload = async (
           const published = await fireflyClient.publishDataBlob(upload.id);
           const ipfsHash = published.blob.public;
 
-          
+
 
           console.log("Saving the derived image in DB...");
           const ipfsLink = `http://localhost:10207/ipfs/${ipfsHash}`;
@@ -158,26 +142,35 @@ export const handleImageUpload = async (
             ipfsHash,
             ipfsLink,
             derivedFrom: basePost._id,
-            originalArtist: basePost.artistName, // Store the original artist
             artistName: user.username, 
+            org: basePost.org,
             likeCount: 0,
           });
 
 
-          const message = isExact
-          ? `Your post has been exactly duplicated by: ${user.username}`
-          : `A similar image has been uploaded by: ${user.username}`;
-    
-        sendNotificationToUser(basePost.artist.toString(),message); // Send notification via WebSocket
-    
-        // Save the notification in the database for the original artist
-        await Notification.create({
-          userId: basePost.artist.toString(),
-          message,
-          read: false,
-        });
-
-          return {
+          console.log("Registering derived image on-chain...");
+          await fireflyClient.invokeContractAPI(
+            contractApiName,
+            "registerDerivedImage",
+            {
+              input: {
+                sha256Hash: `0x${shaHash}`,
+                pHash: `0x${pHashHex}`,
+                ipfsHash,
+                originalArtistName: basePost.artistName,
+                originalOrg: basePost.org,
+                originalArtistAddress: basePost.artist,
+                duplicatorName: user.username,
+                duplicatorOrg: config.ORG,
+              },
+              key: user.fireflyKey,
+            },
+            {
+              confirm: true,
+            }
+          );
+          
+      return {
             message: isExact
               ? "Exact duplicate uploaded as derived"
               : "Similar image uploaded as derived",
@@ -191,7 +184,6 @@ export const handleImageUpload = async (
 
     console.log("No match found. Treating it as original upload.");
 
-
     // Upload image to IPFS
     console.log("So Uploading original image to IPFS...");
     const upload = await fireflyClient.uploadDataBlob(file.buffer, {
@@ -201,21 +193,29 @@ export const handleImageUpload = async (
     const published = await fireflyClient.publishDataBlob(upload.id);
     const ipfsHash = published.blob.public;
 
+    const ipfsLink = `http://localhost:10207/ipfs/${ipfsHash}`;
+
+   
     // Register the image on-chain
     console.log("Registering original image on-chain...");
-    const tx = await fireflyClient.invokeContractAPI(contractApiName, "registerImage", {
-      input: {
-        sha256Hash: `0x${shaHash}`,
-        pHash: `0x${pHashHex}`,
-        ipfsHash,
-        requireRoyalty: requireRoyalty || false,
+    const tx = await fireflyClient.invokeContractAPI(
+      contractApiName,
+      "registerImage",
+      {
+        input: {
+          sha256Hash: `0x${shaHash}`,
+          pHash: `0x${pHashHex}`,
+          ipfsHash,
+          requireRoyalty,
+          artistName: user.username,
+          org: config.ORG,
+        },
+        key: user.fireflyKey,
       },
-      key: user.fireflyKey,
-    });
+    );
 
     console.log("Saving original image in DB...");
    
-    const ipfsLink = `http://localhost:10207/ipfs/${ipfsHash}`;
     const newPost = await PostModel.create({
       caption,
       artist: user._id,
@@ -226,8 +226,9 @@ export const handleImageUpload = async (
       ipfsLink,
       txId: tx.tx,
       requireRoyalty: requireRoyalty || false,
-      artistName: user.username, // Store the artist's name
-    });
+      artistName: user.username,
+      org: config.ORG, // Store the artist's name
+    });   
 
     console.log("Upload completed!");
     return {

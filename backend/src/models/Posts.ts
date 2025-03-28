@@ -7,14 +7,15 @@ export interface IPost extends Document {
   sha256: string;
   pHash: string;
   ipfsHash: string;
-  ipfsLink: string; // IPFS link
+  ipfsLink: string;
   txId: string;
-  imageId?: number; 
-  derivedFrom?: mongoose.Types.ObjectId; 
+  imageId?: number;
+  derivedFrom?: mongoose.Types.ObjectId;
   requireRoyalty?: boolean;
-  likeCount: number; 
-  originalArtist?: mongoose.Types.ObjectId; // Store original artist if derived
-  artistName: string; // Name of the artist
+  likeCount: number;
+  originalArtist?: mongoose.Types.ObjectId;
+  artistName: string;
+  org: string;
   createdAt: Date;
 }
 
@@ -26,18 +27,18 @@ const PostSchema = new Schema<IPost>(
     sha256: { type: String, required: true },
     pHash: { type: String, required: true },
     ipfsHash: { type: String, required: true },
-    ipfsLink: { type: String, required: true }, // This is image link to display
+    ipfsLink: { type: String, required: true },
     txId: { type: String },
     imageId: { type: Number },
-    derivedFrom: { type: Schema.Types.ObjectId, ref: "Post" },
+    derivedFrom: { type: Schema.Types.ObjectId, ref: "ImageRegistry" },
     requireRoyalty: { type: Boolean, default: false },
     likeCount: { type: Number, default: 0 },
-    originalArtist: { type: Schema.Types.ObjectId, ref: "User" }, // Store the original artist
-    artistName: { type: String, required: true }, // Artist name
+    originalArtist: { type: Schema.Types.ObjectId, ref: "User" },
+    artistName: { type: String, required: true },
+    org: { type: String, required: true }, 
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
   }
 );
-
 export const PostModel = mongoose.model<IPost>("Post", PostSchema);
