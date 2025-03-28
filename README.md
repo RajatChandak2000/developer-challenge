@@ -40,35 +40,35 @@ A full-stack, blockchain-powered social media platform built for the Kaleido Dev
 
 ## 📦 Features
 
-### 🖼️ Image Uploads
+### Image Uploads
 - Upload images with captions and artist metadata
 - Choose to enforce royalties for derivative works
 - Images are uploaded to IPFS via FireFly
 - Image metadata registered on-chain (SHA-256, pHash, royalty flag, etc.)
 
-### 🧠 Duplicate Detection
+### Duplicate Detection
 - Uses SHA-256 and perceptual hashing (pHash)
 - Detects both exact and visually similar images
 - Stores pHash in Redis for fast deduplication
 - Supports derived posts with attribution
 
-### 💸 Royalty Enforcement
+### Royalty Enforcement
 - If royalty is required, duplicates must pay a simulated fee before being posted
 - Smart contract enforces royalty logic via `ImageRegistry`
 
-### 🗾️ Derived Posts
+### Derived Posts
 - Derived images are linked to the original post
 - Likes/comments on derived posts redirect to the original
 - Displays attribution: original artist & organization
 
-### ❤️ Likes System
+### Likes System
 - Like posts (original or derived)
 - One like per user enforced on-chain
 - Tracked using `LikeRegistry` contract
 - Emits `PostLiked` events for real-time sync
 - Stored in MongoDB & broadcast to frontend via WebSocket
 
-### 🔐 Auth & Identity
+### Auth & Identity
 - User registration/login using JWT
 - Each user has a unique Ethereum signing key (FireFly Identity)
 - Keys used to sign on-chain transactions securely
@@ -137,4 +137,12 @@ This repo has three directories:
    npm run dev
    ```
 
-5. ✨ **Voila!** Your decentralized image-sharing DApp is live on `http://localhost:5173
+5. ✨ **Voila!** Your decentralized image-sharing DApp is live
+
+<img width="502" alt="image" src="https://github.com/user-attachments/assets/7062961f-5960-4f44-a683-1ead2d523792" />
+
+<img width="1213" alt="image" src="https://github.com/user-attachments/assets/99349e11-0e63-45e7-b234-e175b339f4f4" />
+
+
+
+
